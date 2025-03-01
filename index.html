@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hono.js & Drizzle ORM Setup Guide</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            padding: 20px;
+            background-color: #f4f4f4;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        code {
+            background-color: #eee;
+            padding: 5px;
+            border-radius: 5px;
+            display: block;
+            margin: 5px 0;
+        }
+        pre {
+            background: #333;
+            color: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hono.js & Drizzle ORM Setup Guide</h1>
+    
+    <h2>Step 1: Create Hono Project</h2>
+    <code>npm create hono@latest</code>
+    
+    <h2>Step 2: Run Development Server</h2>
+    <code>npm run dev</code>
+    
+    <h2>Step 3: Drizzle Setup</h2>
+    <h3>Install Drizzle Packages</h3>
+    <code>npm i drizzle-orm pg dotenv</code>
+    <code>npm i -D drizzle-kit tsx @types/pg</code>
+    
+    <h3>Configure Database Credentials</h3>
+    <p>Store the following credentials in your <code>.env</code> file:</p>
+    <pre>
+DB=defaultdb
+DB_HOST=pg-111d4b2d-sukumar63044-61ac.d.aivencloud.com
+PORT=28725
+USER=avnadmin
+PASSWORD=AVNS_kTOFiwa-8TT1cfijtLK
+    </pre>
+    
+    <h3>Add SSL Certificate</h3>
+    <p>Include the <code>ca.pem</code> file in your project.</p>
+    
+    <h3>Setup Configuration</h3>
+    <p>Create a <code>config</code> folder inside <code>src</code> and store the credentials in an object.</p>
+    
+    <h3>Database Connection</h3>
+    <pre>
+import { drizzle } from "drizzle-orm/node-postgres";
+import dbConfig from "../config/dbConfig.js";
+import fs from "fs";
+import pg from "pg";
+const { Pool } = pg;
+
+const pool = new Pool({
+  host: dbConfig.host,
+  port: dbConfig.port,
+  user: dbConfig.user,
+  password: dbConfig.password,
+  database: dbConfig.database,
+  ssl: {
+    rejectUnauthorized: true,
+    ca: fs.readFileSync("./ca.pem").toString(),
+  },
+});
+
+export const db = drizzle(pool, { schema: {} });
+
+db.execute("SELECT 1")
+  .then(() => console.log("CONNECTED SUCCESSFULLY"))
+  .catch((error) => console.error("FAILED TO CONNECT WITH DB", error));
+    </pre>
+    
+    <h3>Drizzle Configuration</h3>
+    <pre>
+import dotenv from "dotenv";
+import fs from "fs";
+dotenv.config();
+
+export default {
+  schema: "./src/db/schemes/*",
+  out: "./drizzle",
+  dialect: "postgresql",
+  dbCredentials: {
+    database: process.env.DB,
+    host: process.env.DB_HOST,
+    port: Number(process.env.PORT),
+    user: process.env.USER,
+    password: process.env.PASSWORD,
+  },
+  ssl: {
+    ca: fs.readFileSync("./ca.pem").toString(),
+    rejectUnauthorized: true,
+  },
+};
+    </pre>
+    
+    <h3>Schema Setup</h3>
+    <p>Create a schema in <code>db/schema/</code> and import it into the database connection file.</p>
+    
+    <h3>Generate and Migrate Tables</h3>
+    <code>npx drizzle-kit generate</code>
+    <code>npx drizzle-kit migrate</code>
+    
+    <h3>Open Drizzle Studio</h3>
+    <code>npx drizzle-kit studio</code>
+</body>
+</html>
